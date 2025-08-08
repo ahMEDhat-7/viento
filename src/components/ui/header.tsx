@@ -1,12 +1,25 @@
-import { ShoppingBag, User, Menu, X } from 'lucide-react';
+import { ShoppingBag, User, Menu, X, LogOut } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from './button';
 import { useStore } from '@/store/useStore';
 import { Link } from 'react-router-dom';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from './dropdown-menu';
+import { supabase } from '@/integrations/supabase/client';
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { cartItemsCount, toggleCart, user, toggleAuthModal } = useStore();
+  const { cartItemsCount, toggleCart, user, toggleAuthModal, setUser, setSession } = useStore();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    setSession(null);
+  };
 
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
@@ -29,15 +42,36 @@ export function Header() {
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center space-x-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={user ? undefined : toggleAuthModal}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              <User className="h-5 w-5" />
-              <span className="ml-2">{user ? 'Account' : 'Login'}</span>
-            </Button>
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    <User className="h-5 w-5" />
+                    <span className="ml-2">Account</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleAuthModal}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <User className="h-5 w-5" />
+                <span className="ml-2">Login</span>
+              </Button>
+            )}
             
             <Button
               variant="ghost"
@@ -85,18 +119,42 @@ export function Header() {
               </Link>
               
               <div className="flex items-center justify-between pt-4 border-t border-border mt-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    if (!user) toggleAuthModal();
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className="flex-1 justify-start text-muted-foreground hover:text-foreground"
-                >
-                  <User className="h-5 w-5 mr-2" />
-                  {user ? 'Account' : 'Login'}
-                </Button>
+                {user ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="flex-1 justify-start text-muted-foreground hover:text-foreground"
+                      >
+                        <User className="h-5 w-5 mr-2" />
+                        Account
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start">
+                      <DropdownMenuItem onClick={() => {
+                        handleLogout();
+                        setIsMobileMenuOpen(false);
+                      }}>
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Logout
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      toggleAuthModal();
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="flex-1 justify-start text-muted-foreground hover:text-foreground"
+                  >
+                    <User className="h-5 w-5 mr-2" />
+                    Login
+                  </Button>
+                )}
                 
                 <Button
                   variant="ghost"
