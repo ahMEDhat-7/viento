@@ -154,6 +154,8 @@ export const useStore = create<StoreState>()(
       partialize: (state) => ({
         cartItems: state.cartItems,
         selectedCategory: state.selectedCategory,
+        user: state.user,
+        session: state.session,
       }),
     }
   )

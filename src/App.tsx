@@ -3,6 +3,9 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useStore } from "@/store/useStore";
 import { Header } from "@/components/ui/header";
 import { CartSidebar } from "@/components/ui/cart-sidebar";
 import { AuthModal } from "@/components/auth/AuthModal";
@@ -16,7 +19,38 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const App = () => (
+const App = () => {
+  const { setUser, setSession } = useStore();
+
+  useEffect(() => {
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session);
+        setUser(session?.user ? {
+          id: session.user.id,
+          email: session.user.email,
+          first_name: session.user.user_metadata?.first_name,
+          last_name: session.user.user_metadata?.last_name,
+        } : null);
+      }
+    );
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ? {
+        id: session.user.id,
+        email: session.user.email,
+        first_name: session.user.user_metadata?.first_name,
+        last_name: session.user.user_metadata?.last_name,
+      } : null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [setUser, setSession]);
+
+  return (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
@@ -41,6 +75,7 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;
