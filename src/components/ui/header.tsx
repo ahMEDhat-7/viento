@@ -1,5 +1,5 @@
-import { ShoppingBag, User, Menu, X, LogOut } from 'lucide-react';
-import { useState } from 'react';
+import { ShoppingBag, User, Menu, X, LogOut, Settings } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { Button } from './button';
 import { useStore } from '@/store/useStore';
 import { Link } from 'react-router-dom';
@@ -8,17 +8,37 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from './dropdown-menu';
 import { supabase } from '@/integrations/supabase/client';
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const { cartItemsCount, toggleCart, user, toggleAuthModal, setUser, setSession } = useStore();
+
+  useEffect(() => {
+    const checkAdminRole = async () => {
+      if (user) {
+        const { data, error } = await supabase.rpc('get_current_user_role');
+        if (!error && data === 'admin') {
+          setIsAdmin(true);
+        } else {
+          setIsAdmin(false);
+        }
+      } else {
+        setIsAdmin(false);
+      }
+    };
+
+    checkAdminRole();
+  }, [user]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
+    setIsAdmin(false);
   };
 
   return (
@@ -55,6 +75,17 @@ export function Header() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  {isAdmin && (
+                    <>
+                      <DropdownMenuItem asChild>
+                        <Link to="/admin">
+                          <Settings className="h-4 w-4 mr-2" />
+                          Admin Dashboard
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
                   <DropdownMenuItem onClick={handleLogout}>
                     <LogOut className="h-4 w-4 mr-2" />
                     Logout
@@ -132,6 +163,17 @@ export function Header() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start">
+                      {isAdmin && (
+                        <>
+                          <DropdownMenuItem asChild>
+                            <Link to="/admin" onClick={() => setIsMobileMenuOpen(false)}>
+                              <Settings className="h-4 w-4 mr-2" />
+                              Admin Dashboard
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                        </>
+                      )}
                       <DropdownMenuItem onClick={() => {
                         handleLogout();
                         setIsMobileMenuOpen(false);

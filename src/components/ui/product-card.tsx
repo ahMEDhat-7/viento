@@ -22,9 +22,13 @@ export function ProductCard({ product }: ProductCardProps) {
         <div className="aspect-[3/4] overflow-hidden bg-muted">
           {product.image_url ? (
             <img
-              src={product.image_url}
+              src={product.image_url.includes('cloudinary.com') ? 
+                `${product.image_url}/w_400,h_533,c_fill,f_auto,q_auto` : 
+                product.image_url
+              }
               alt={product.name}
               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+              loading="lazy"
             />
           ) : (
             <div className="w-full h-full bg-muted flex items-center justify-center">
