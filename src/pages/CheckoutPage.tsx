@@ -8,6 +8,18 @@ import { Separator } from '@/components/ui/separator';
 import { useStore } from '@/store/useStore';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { z } from 'zod';
+
+const shippingSchema = z.object({
+  firstName: z.string().trim().min(1, "First name is required").max(100, "First name must be less than 100 characters"),
+  lastName: z.string().trim().min(1, "Last name is required").max(100, "Last name must be less than 100 characters"),
+  email: z.string().trim().email("Invalid email address").max(255, "Email must be less than 255 characters"),
+  phone: z.string().trim().min(10, "Phone number must be at least 10 digits").max(20, "Phone number must be less than 20 characters"),
+  address: z.string().trim().min(5, "Address is required").max(200, "Address must be less than 200 characters"),
+  city: z.string().trim().min(2, "City is required").max(100, "City must be less than 100 characters"),
+  postalCode: z.string().trim().min(3, "Postal code is required").max(20, "Postal code must be less than 20 characters"),
+  country: z.string().trim().min(2, "Country is required").max(100, "Country must be less than 100 characters")
+});
 
 export default function CheckoutPage() {
   const {
@@ -97,6 +109,18 @@ export default function CheckoutPage() {
     setIsLoading(true);
 
     try {
+      // Validate shipping data
+      const validatedData = shippingSchema.parse({
+        firstName: shippingData.firstName.trim(),
+        lastName: shippingData.lastName.trim(),
+        email: shippingData.email.trim(),
+        phone: shippingData.phone.trim(),
+        address: shippingData.address.trim(),
+        city: shippingData.city.trim(),
+        postalCode: shippingData.postalCode.trim(),
+        country: shippingData.country.trim()
+      });
+
       // Create order
       const { data: order, error: orderError } = await supabase
         .from('orders')
@@ -104,7 +128,7 @@ export default function CheckoutPage() {
           user_id: user.id,
           total_amount: cartTotal(),
           status: 'pending',
-          shipping_address: shippingData
+          shipping_address: validatedData
         })
         .select()
         .single();
@@ -135,16 +159,23 @@ export default function CheckoutPage() {
       
       navigate('/');
       
-    } catch (error) {
-      console.error('Error placing order:', error);
-      toast({
-        title: "Error",
-        description: "Failed to place order. Please try again.",
-        variant: "destructive",
-      });
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        toast({
+          title: "Validation Error",
+          description: error.errors[0].message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to place order. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
   if (cartItems.length === 0) {

@@ -10,6 +10,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, Edit, Trash2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { z } from 'zod';
+
+const categorySchema = z.object({
+  name: z.string().trim().min(1, "Category name is required").max(100, "Category name must be less than 100 characters"),
+  description: z.string().trim().max(500, "Description must be less than 500 characters").optional()
+});
 
 export const CategoryManagement: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -66,15 +72,20 @@ export const CategoryManagement: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const slug = formData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-    
-    const categoryData = {
-      name: formData.name,
-      slug,
-      description: formData.description || null,
-    };
-
     try {
+      const validatedData = categorySchema.parse({
+        name: formData.name.trim(),
+        description: formData.description.trim() || undefined
+      });
+
+      const slug = validatedData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      
+      const categoryData = {
+        name: validatedData.name,
+        slug,
+        description: validatedData.description || null,
+      };
+
       if (editingCategory) {
         const { error } = await supabase
           .from('categories')
@@ -95,9 +106,12 @@ export const CategoryManagement: React.FC = () => {
       setIsDialogOpen(false);
       resetForm();
       fetchCategories();
-    } catch (error) {
-      console.error('Error saving category:', error);
-      toast.error('Failed to save category');
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        toast.error(error.errors[0].message);
+      } else {
+        toast.error('Failed to save category');
+      }
     }
   };
 

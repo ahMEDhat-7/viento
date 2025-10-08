@@ -12,6 +12,17 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, Edit, Trash2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { z } from 'zod';
+
+const productSchema = z.object({
+  name: z.string().trim().min(1, "Product name is required").max(200, "Product name must be less than 200 characters"),
+  description: z.string().trim().max(2000, "Description must be less than 2000 characters").optional(),
+  price: z.number().positive("Price must be positive").max(999999.99, "Price is too high"),
+  stock_quantity: z.number().int("Stock must be a whole number").min(0, "Stock cannot be negative").max(999999, "Stock quantity is too high"),
+  category_id: z.string().uuid("Invalid category").optional(),
+  image_url: z.string().trim().url("Invalid URL").max(500, "URL must be less than 500 characters").optional(),
+  is_featured: z.boolean()
+});
 
 export const ProductManagement: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -99,20 +110,30 @@ export const ProductManagement: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const slug = formData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-    
-    const productData = {
-      name: formData.name,
-      slug,
-      description: formData.description || null,
-      price: parseFloat(formData.price),
-      image_url: formData.image_url || null,
-      category_id: formData.category_id || null,
-      stock_quantity: parseInt(formData.stock_quantity),
-      is_featured: formData.is_featured,
-    };
-
     try {
+      const validatedData = productSchema.parse({
+        name: formData.name.trim(),
+        description: formData.description.trim() || undefined,
+        price: parseFloat(formData.price),
+        stock_quantity: parseInt(formData.stock_quantity),
+        category_id: formData.category_id || undefined,
+        image_url: formData.image_url.trim() || undefined,
+        is_featured: formData.is_featured
+      });
+
+      const slug = validatedData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      
+      const productData = {
+        name: validatedData.name,
+        slug,
+        description: validatedData.description || null,
+        price: validatedData.price,
+        image_url: validatedData.image_url || null,
+        category_id: validatedData.category_id || null,
+        stock_quantity: validatedData.stock_quantity,
+        is_featured: validatedData.is_featured,
+      };
+
       if (editingProduct) {
         const { error } = await supabase
           .from('products')
@@ -133,9 +154,12 @@ export const ProductManagement: React.FC = () => {
       setIsDialogOpen(false);
       resetForm();
       fetchProducts();
-    } catch (error) {
-      console.error('Error saving product:', error);
-      toast.error('Failed to save product');
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        toast.error(error.errors[0].message);
+      } else {
+        toast.error('Failed to save product');
+      }
     }
   };
 
