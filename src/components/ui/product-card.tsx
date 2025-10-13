@@ -2,6 +2,7 @@ import { Product } from '@/store/useStore';
 import { Button } from './button';
 import { useStore } from '@/store/useStore';
 import { Link } from 'react-router-dom';
+import { useFacebookPixel } from '@/hooks/useFacebookPixel';
 
 interface ProductCardProps {
   product: Product;
@@ -9,11 +10,14 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const { addToCart } = useStore();
+  const { trackAddToCart } = useFacebookPixel();
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     addToCart(product);
+    // Track AddToCart event
+    trackAddToCart(product.id, product.name, product.price, 1);
   };
 
   return (

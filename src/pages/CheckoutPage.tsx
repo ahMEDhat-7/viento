@@ -9,6 +9,7 @@ import { useStore } from '@/store/useStore';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
+import { useFacebookPixel } from '@/hooks/useFacebookPixel';
 
 const shippingSchema = z.object({
   firstName: z.string().trim().min(1, "First name is required").max(100, "First name must be less than 100 characters"),
@@ -30,10 +31,12 @@ export default function CheckoutPage() {
     clearCart,
     setUser,
     setSession,
-    toggleAuthModal
+    toggleAuthModal,
+    cartItemsCount
   } = useStore();
   
   const [isLoading, setIsLoading] = useState(false);
+  const { trackInitiateCheckout, trackPurchase } = useFacebookPixel();
   const [shippingData, setShippingData] = useState({
     firstName: '',
     lastName: '',
@@ -70,8 +73,11 @@ export default function CheckoutPage() {
     // Redirect if cart is empty
     if (cartItems.length === 0) {
       navigate('/products');
+    } else {
+      // Track InitiateCheckout when user lands on checkout page
+      trackInitiateCheckout(cartTotal(), cartItemsCount());
     }
-  }, [cartItems, navigate]);
+  }, [cartItems, navigate, trackInitiateCheckout, cartTotal, cartItemsCount]);
 
   useEffect(() => {
     // Pre-fill user data if logged in
@@ -148,6 +154,9 @@ export default function CheckoutPage() {
         .insert(orderItems);
 
       if (itemsError) throw itemsError;
+
+      // Track Purchase event
+      trackPurchase(cartTotal(), order.id);
 
       // Clear cart and redirect
       clearCart();

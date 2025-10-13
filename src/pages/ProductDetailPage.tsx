@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useStore } from '@/store/useStore';
 import { supabase } from '@/integrations/supabase/client';
 import type { Product } from '@/store/useStore';
+import { useFacebookPixel } from '@/hooks/useFacebookPixel';
 
 export default function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -13,6 +14,7 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   
   const { addToCart } = useStore();
+  const { trackViewContent, trackAddToCart } = useFacebookPixel();
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -30,17 +32,21 @@ export default function ProductDetailPage() {
 
       if (data && !error) {
         setProduct(data);
+        // Track ViewContent event
+        trackViewContent(data.id, data.name, data.price);
       }
       
       setLoading(false);
     };
 
     fetchProduct();
-  }, [slug]);
+  }, [slug, trackViewContent]);
 
   const handleAddToCart = () => {
     if (product) {
       addToCart(product, quantity);
+      // Track AddToCart event
+      trackAddToCart(product.id, product.name, product.price, quantity);
       // Reset quantity after adding to cart
       setQuantity(1);
     }
