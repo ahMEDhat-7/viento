@@ -8,8 +8,35 @@ declare global {
   }
 }
 
-// Initialize Facebook Pixel (called automatically via script in index.html)
 const PIXEL_ID = import.meta.env.VITE_FACEBOOK_PIXEL_ID;
+
+// Initialize Facebook Pixel once
+export const initializeFacebookPixel = () => {
+  if (typeof window === 'undefined' || !PIXEL_ID || window.fbq) return;
+  
+  // Load Facebook Pixel script
+  (function(f: any, b: Document, e: string, v: string) {
+    let n: any, t: HTMLScriptElement, s: Element | null;
+    if (f.fbq) return;
+    n = f.fbq = function() {
+      n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments);
+    };
+    if (!f._fbq) f._fbq = n;
+    n.push = n;
+    n.loaded = true;
+    n.version = '2.0';
+    n.queue = [];
+    t = b.createElement(e) as HTMLScriptElement;
+    t.async = true;
+    t.src = v;
+    s = b.getElementsByTagName(e)[0];
+    s?.parentNode?.insertBefore(t, s);
+  })(window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
+  
+  // Initialize with Pixel ID
+  window.fbq('init', PIXEL_ID);
+  window.fbq('track', 'PageView');
+};
 
 // Helper to safely call fbq
 const fbq = (...args: Parameters<typeof window.fbq>) => {

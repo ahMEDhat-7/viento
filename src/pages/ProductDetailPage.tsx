@@ -43,10 +43,11 @@ export default function ProductDetailPage() {
   }, [slug]); // Remove trackViewContent from dependencies to prevent infinite loop
 
   const handleAddToCart = () => {
-    if (product) {
-      addToCart(product, quantity);
+    if (product && product.stock_quantity > 0) {
+      const maxQuantity = Math.min(quantity, product.stock_quantity);
+      addToCart(product, maxQuantity);
       // Track AddToCart event
-      trackAddToCart(product.id, product.name, product.price, quantity);
+      trackAddToCart(product.id, product.name, product.price, maxQuantity);
       // Reset quantity after adding to cart
       setQuantity(1);
     }

@@ -98,17 +98,28 @@ export const useStore = create<StoreState>()(
         const { cartItems } = get();
         const existingItem = cartItems.find(item => item.id === product.id);
         
+        // Calculate total quantity including what's already in cart
+        const currentQuantityInCart = existingItem?.quantity || 0;
+        const newTotalQuantity = currentQuantityInCart + quantity;
+        
+        // Don't exceed stock quantity
+        const maxAllowedQuantity = Math.min(newTotalQuantity, product.stock_quantity);
+        
+        if (maxAllowedQuantity <= 0) {
+          return; // Don't add if no stock available
+        }
+        
         if (existingItem) {
           set({
             cartItems: cartItems.map(item =>
               item.id === product.id
-                ? { ...item, quantity: item.quantity + quantity }
+                ? { ...item, quantity: maxAllowedQuantity }
                 : item
             )
           });
         } else {
           set({
-            cartItems: [...cartItems, { ...product, quantity }]
+            cartItems: [...cartItems, { ...product, quantity: Math.min(quantity, product.stock_quantity) }]
           });
         }
       },
@@ -126,9 +137,14 @@ export const useStore = create<StoreState>()(
         }
         
         set({
-          cartItems: get().cartItems.map(item =>
-            item.id === productId ? { ...item, quantity } : item
-          )
+          cartItems: get().cartItems.map(item => {
+            if (item.id === productId) {
+              // Don't exceed stock quantity
+              const maxQuantity = Math.min(quantity, item.stock_quantity);
+              return { ...item, quantity: maxQuantity };
+            }
+            return item;
+          })
         });
       },
       

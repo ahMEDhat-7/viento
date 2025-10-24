@@ -15,6 +15,11 @@ export function ProductCard({ product }: ProductCardProps) {
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    if (product.stock_quantity <= 0) {
+      return;
+    }
+    
     addToCart(product);
     // Track AddToCart event
     trackAddToCart(product.id, product.name, product.price, 1);

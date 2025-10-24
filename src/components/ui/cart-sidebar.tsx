@@ -78,6 +78,7 @@ export function CartSidebar() {
                           size="sm"
                           onClick={() => updateCartItemQuantity(item.id, item.quantity - 1)}
                           className="h-8 w-8 p-0"
+                          disabled={item.quantity <= 1}
                         >
                           <Minus className="h-4 w-4" />
                         </Button>
@@ -91,6 +92,7 @@ export function CartSidebar() {
                           size="sm"
                           onClick={() => updateCartItemQuantity(item.id, item.quantity + 1)}
                           className="h-8 w-8 p-0"
+                          disabled={item.quantity >= item.stock_quantity}
                         >
                           <Plus className="h-4 w-4" />
                         </Button>
