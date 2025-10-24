@@ -40,7 +40,7 @@ export default function ProductDetailPage() {
     };
 
     fetchProduct();
-  }, [slug, trackViewContent]);
+  }, [slug]); // Remove trackViewContent from dependencies to prevent infinite loop
 
   const handleAddToCart = () => {
     if (product) {
