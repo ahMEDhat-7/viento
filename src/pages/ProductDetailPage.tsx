@@ -6,6 +6,7 @@ import { useStore } from '@/store/useStore';
 import { supabase } from '@/integrations/supabase/client';
 import type { Product } from '@/store/useStore';
 import { useFacebookPixel } from '@/hooks/useFacebookPixel';
+import { useTikTokPixel } from '@/hooks/useTikTokPixel';
 
 export default function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -15,6 +16,7 @@ export default function ProductDetailPage() {
   
   const { addToCart } = useStore();
   const { trackViewContent, trackAddToCart } = useFacebookPixel();
+  const { trackViewContent: trackViewContentTikTok, trackAddToCart: trackAddToCartTikTok } = useTikTokPixel();
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -34,6 +36,7 @@ export default function ProductDetailPage() {
         setProduct(data);
         // Track ViewContent event
         trackViewContent(data.id, data.name, data.price);
+        trackViewContentTikTok(data.id, data.name, data.price);
       }
       
       setLoading(false);
@@ -48,6 +51,7 @@ export default function ProductDetailPage() {
       addToCart(product, maxQuantity);
       // Track AddToCart event
       trackAddToCart(product.id, product.name, product.price, maxQuantity);
+      trackAddToCartTikTok(product.id, product.name, product.price, maxQuantity);
       // Reset quantity after adding to cart
       setQuantity(1);
     }

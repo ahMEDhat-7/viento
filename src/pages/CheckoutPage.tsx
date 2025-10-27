@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
 import { useFacebookPixel } from '@/hooks/useFacebookPixel';
+import { useTikTokPixel } from '@/hooks/useTikTokPixel';
 
 const shippingSchema = z.object({
   firstName: z.string().trim().min(1, "First name is required").max(100, "First name must be less than 100 characters"),
@@ -37,6 +38,7 @@ export default function CheckoutPage() {
   
   const [isLoading, setIsLoading] = useState(false);
   const { trackInitiateCheckout, trackPurchase } = useFacebookPixel();
+  const { trackInitiateCheckout: trackInitiateCheckoutTikTok, trackPurchase: trackPurchaseTikTok } = useTikTokPixel();
   const [shippingData, setShippingData] = useState({
     firstName: '',
     lastName: '',
@@ -76,6 +78,7 @@ export default function CheckoutPage() {
     } else {
       // Track InitiateCheckout when user lands on checkout page
       trackInitiateCheckout(cartTotal(), cartItemsCount());
+      trackInitiateCheckoutTikTok(cartTotal(), cartItemsCount());
     }
   }, [cartItems, navigate, trackInitiateCheckout, cartTotal, cartItemsCount]);
 
@@ -157,6 +160,7 @@ export default function CheckoutPage() {
 
       // Track Purchase event
       trackPurchase(cartTotal(), order.id);
+      trackPurchaseTikTok(cartTotal(), order.id);
 
       // Clear cart and redirect
       clearCart();
