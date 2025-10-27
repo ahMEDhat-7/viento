@@ -20,10 +20,16 @@ export function Header() {
   useEffect(() => {
     const checkAdminRole = async () => {
       if (user) {
-        const { data, error } = await supabase.rpc('get_current_user_role');
-        if (!error && data === 'admin') {
-          setIsAdmin(true);
-        } else {
+        try {
+          const { data, error } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', user.id)
+            .eq('role', 'admin')
+            .maybeSingle();
+
+          setIsAdmin(!error && !!data);
+        } catch (error) {
           setIsAdmin(false);
         }
       } else {

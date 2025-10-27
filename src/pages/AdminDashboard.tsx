@@ -28,17 +28,15 @@ export const AdminDashboard: React.FC = () => {
           .select('role')
           .eq('user_id', user.id)
           .eq('role', 'admin')
-          .single();
+          .maybeSingle();
 
         if (error && error.code !== 'PGRST116') {
-          console.error('Error checking admin role:', error);
           toast.error('Error checking permissions');
           setIsAdmin(false);
         } else {
           setIsAdmin(!!data);
         }
       } catch (error) {
-        console.error('Error checking admin role:', error);
         setIsAdmin(false);
       } finally {
         setLoading(false);

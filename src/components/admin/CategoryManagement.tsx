@@ -41,7 +41,6 @@ export const CategoryManagement: React.FC = () => {
       if (error) throw error;
       setCategories(data || []);
     } catch (error) {
-      console.error('Error fetching categories:', error);
       toast.error('Failed to load categories');
     } finally {
       setLoading(false);
@@ -79,6 +78,19 @@ export const CategoryManagement: React.FC = () => {
       });
 
       const slug = validatedData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      
+      // Check for duplicate slug
+      const { data: existingCategory } = await supabase
+        .from('categories')
+        .select('id')
+        .eq('slug', slug)
+        .neq('id', editingCategory?.id || '00000000-0000-0000-0000-000000000000')
+        .maybeSingle();
+
+      if (existingCategory) {
+        toast.error('A category with a similar name already exists. Please use a different name.');
+        return;
+      }
       
       const categoryData = {
         name: validatedData.name,
@@ -128,7 +140,6 @@ export const CategoryManagement: React.FC = () => {
       toast.success('Category deleted successfully');
       fetchCategories();
     } catch (error) {
-      console.error('Error deleting category:', error);
       toast.error('Failed to delete category');
     }
   };

@@ -55,7 +55,6 @@ export const ProductManagement: React.FC = () => {
       if (error) throw error;
       setProducts(data || []);
     } catch (error) {
-      console.error('Error fetching products:', error);
       toast.error('Failed to load products');
     } finally {
       setLoading(false);
@@ -72,7 +71,7 @@ export const ProductManagement: React.FC = () => {
       if (error) throw error;
       setCategories(data || []);
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      toast.error('Failed to load categories');
     }
   };
 
@@ -122,6 +121,19 @@ export const ProductManagement: React.FC = () => {
       });
 
       const slug = validatedData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      
+      // Check for duplicate slug
+      const { data: existingProduct } = await supabase
+        .from('products')
+        .select('id')
+        .eq('slug', slug)
+        .neq('id', editingProduct?.id || '00000000-0000-0000-0000-000000000000')
+        .maybeSingle();
+
+      if (existingProduct) {
+        toast.error('A product with a similar name already exists. Please use a different name.');
+        return;
+      }
       
       const productData = {
         name: validatedData.name,
@@ -176,7 +188,6 @@ export const ProductManagement: React.FC = () => {
       toast.success('Product deleted successfully');
       fetchProducts();
     } catch (error) {
-      console.error('Error deleting product:', error);
       toast.error('Failed to delete product');
     }
   };

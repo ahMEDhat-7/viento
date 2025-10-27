@@ -27,23 +27,15 @@ export function AuthModal() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   
-  const { isAuthModalOpen, toggleAuthModal, setUser, setSession } = useStore();
+  const { isAuthModalOpen, toggleAuthModal, user, setUser, setSession } = useStore();
   const { toast } = useToast();
 
   useEffect(() => {
-    // Close modal when user is authenticated
-    if (isAuthModalOpen && setUser) {
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(
-        (event, session) => {
-          if (session?.user) {
-            toggleAuthModal();
-          }
-        }
-      );
-
-      return () => subscription.unsubscribe();
+    // Close modal when user is authenticated (checked via store state)
+    if (isAuthModalOpen && user) {
+      toggleAuthModal();
     }
-  }, [isAuthModalOpen, toggleAuthModal]);
+  }, [isAuthModalOpen, user, toggleAuthModal]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();

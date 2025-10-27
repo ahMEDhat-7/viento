@@ -25,31 +25,7 @@ export default function AuthPage() {
     if (user) {
       navigate('/');
     }
-
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          navigate('/');
-        }
-      }
-    );
-
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        navigate('/');
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [user, navigate, setUser, setSession]);
+  }, [user, navigate]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();

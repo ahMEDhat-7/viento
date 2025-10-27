@@ -53,23 +53,7 @@ export default function CheckoutPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  useEffect(() => {
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-      }
-    );
-
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, [setUser, setSession]);
+  // Auth state is managed in App.tsx - no need for duplicate listener
 
   useEffect(() => {
     // Redirect if cart is empty
@@ -88,8 +72,8 @@ export default function CheckoutPage() {
       setShippingData(prev => ({
         ...prev,
         email: user.email || '',
-        firstName: (user as any).user_metadata?.first_name || '',
-        lastName: (user as any).user_metadata?.last_name || ''
+        firstName: user.first_name || '',
+        lastName: user.last_name || ''
       }));
     }
   }, [user]);
@@ -349,7 +333,7 @@ export default function CheckoutPage() {
                       {item.image_url ? (
                         <img
                           src={item.image_url}
-                          alt={item.name}
+                          alt={`${item.name} product image`}
                           className="w-full h-full object-cover"
                         />
                       ) : (

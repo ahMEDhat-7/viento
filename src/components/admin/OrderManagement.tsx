@@ -52,7 +52,6 @@ export const OrderManagement: React.FC = () => {
       if (error) throw error;
       setOrders(data || []);
     } catch (error) {
-      console.error('Error fetching orders:', error);
       toast.error('Failed to load orders');
     } finally {
       setLoading(false);
@@ -75,7 +74,6 @@ export const OrderManagement: React.FC = () => {
       if (error) throw error;
       setOrderItems(data || []);
     } catch (error) {
-      console.error('Error fetching order items:', error);
       toast.error('Failed to load order items');
     }
   };
@@ -91,7 +89,6 @@ export const OrderManagement: React.FC = () => {
       toast.success('Order status updated successfully');
       fetchOrders();
     } catch (error) {
-      console.error('Error updating order status:', error);
       toast.error('Failed to update order status');
     }
   };
@@ -214,10 +211,13 @@ export const OrderManagement: React.FC = () => {
 
                 {selectedOrder.shipping_address && (
                   <div>
-                    <h3 className="font-semibold mb-2">Shipping Address</h3>
-                    <div className="bg-muted p-3 rounded">
-                      <p>{selectedOrder.shipping_address.street}</p>
-                      <p>{selectedOrder.shipping_address.city}, {selectedOrder.shipping_address.state} {selectedOrder.shipping_address.zip}</p>
+                    <h3 className="font-semibold mb-2">Shipping Information</h3>
+                    <div className="bg-muted p-3 rounded space-y-1">
+                      <p className="font-semibold">{selectedOrder.shipping_address.firstName} {selectedOrder.shipping_address.lastName}</p>
+                      <p>{selectedOrder.shipping_address.email}</p>
+                      {selectedOrder.shipping_address.phone && <p>{selectedOrder.shipping_address.phone}</p>}
+                      <p className="pt-2">{selectedOrder.shipping_address.address}</p>
+                      <p>{selectedOrder.shipping_address.city}, {selectedOrder.shipping_address.postalCode}</p>
                       <p>{selectedOrder.shipping_address.country}</p>
                     </div>
                   </div>
