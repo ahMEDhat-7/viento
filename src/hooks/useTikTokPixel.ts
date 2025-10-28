@@ -16,7 +16,19 @@ const PIXEL_ID = import.meta.env.VITE_TIKTOK_PIXEL_ID;
 
 // Initialize TikTok Pixel once
 export const initializeTikTokPixel = () => {
-  if (typeof window === 'undefined' || !PIXEL_ID || window.ttq) return;
+  if (typeof window === 'undefined') return;
+  
+  if (!PIXEL_ID) {
+    console.warn('TikTok Pixel ID is not configured');
+    return;
+  }
+  
+  if (window.ttq) {
+    console.log('TikTok Pixel already initialized');
+    return;
+  }
+  
+  console.log('Initializing TikTok Pixel with ID:', PIXEL_ID);
   
   // Load TikTok Pixel script
   (function(w: any, d: Document, t: string) {
@@ -59,12 +71,16 @@ export const initializeTikTokPixel = () => {
   // Initialize with Pixel ID
   window.ttq.load(PIXEL_ID);
   window.ttq.page();
+  console.log('TikTok Pixel loaded and page tracked');
 };
 
 // Helper to safely call ttq
 const ttq = (eventName: string, params?: Record<string, any>) => {
   if (typeof window !== 'undefined' && window.ttq && PIXEL_ID) {
+    console.log('TikTok Pixel Event:', eventName, params);
     window.ttq.track(eventName, params);
+  } else {
+    console.warn('TikTok Pixel not available for event:', eventName);
   }
 };
 
