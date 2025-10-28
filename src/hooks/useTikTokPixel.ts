@@ -9,99 +9,121 @@ declare global {
 
 const PIXEL_ID = import.meta.env.VITE_TIKTOK_PIXEL_ID;
 
+let isPixelReady = false;
+
 // Initialize TikTok Pixel once
 export const initializeTikTokPixel = () => {
   if (typeof window === 'undefined') return;
   
   if (!PIXEL_ID) {
-    console.warn('TikTok Pixel ID is not configured');
+    console.warn('⚠️ TikTok Pixel ID is not configured in environment variables');
     return;
   }
   
-  if (window.ttq) {
-    console.log('TikTok Pixel already initialized');
+  if (window.ttq && isPixelReady) {
+    console.log('✅ TikTok Pixel already initialized and ready');
     return;
   }
   
-  console.log('Initializing TikTok Pixel with ID:', PIXEL_ID);
+  console.log('🚀 Initializing TikTok Pixel with ID:', PIXEL_ID);
   
   try {
-    // Create ttq object
-    window.ttq = window.ttq || [];
-    const ttq = window.ttq;
-    
-    if (ttq.load) {
-      console.log('TikTok Pixel already has load method');
-      return;
-    }
-    
-    // Define methods
-    ttq.methods = ['page', 'track', 'identify', 'instances', 'debug', 'on', 'off', 'once', 'ready', 'alias', 'group', 'enableCookie', 'disableCookie', 'setAndDefer'];
-    ttq.setAndDefer = function(t: any, e: string) {
-      t[e] = function() {
-        t.push([e].concat(Array.prototype.slice.call(arguments, 0)));
-      };
-    };
-    
-    // Set up all methods
-    for (let i = 0; i < ttq.methods.length; i++) {
-      ttq.setAndDefer(ttq, ttq.methods[i]);
-    }
-    
-    // Initialize storage
-    ttq._i = ttq._i || {};
-    ttq._t = ttq._t || {};
-    ttq._o = ttq._o || {};
-    
-    // Load function
-    ttq.load = function(pixelCode: string) {
-      const url = 'https://analytics.tiktok.com/i18n/pixel/events.js';
-      ttq._i[pixelCode] = [];
-      ttq._i[pixelCode]._u = url;
-      ttq._t[pixelCode] = +new Date();
-      ttq._o[pixelCode] = {};
+    // Standard TikTok Pixel implementation
+    (function(w: any, d: Document, t: string) {
+      w.TikTokAnalyticsObject = t;
+      const ttq = w[t] = w[t] || [];
       
-      const script = document.createElement('script');
-      script.type = 'text/javascript';
-      script.async = true;
-      script.src = url + '?sdkid=' + pixelCode + '&lib=ttq';
+      ttq.methods = ['page', 'track', 'identify', 'instances', 'debug', 'on', 'off', 'once', 'ready', 'alias', 'group', 'enableCookie', 'disableCookie'];
       
-      script.onerror = () => {
-        console.error('Failed to load TikTok Pixel script');
+      ttq.setAndDefer = function(t: any, e: string) {
+        t[e] = function() {
+          t.push([e].concat(Array.prototype.slice.call(arguments, 0)));
+        };
       };
       
-      script.onload = () => {
-        console.log('TikTok Pixel script loaded successfully');
-      };
-      
-      const firstScript = document.getElementsByTagName('script')[0];
-      if (firstScript && firstScript.parentNode) {
-        firstScript.parentNode.insertBefore(script, firstScript);
+      for (let i = 0; i < ttq.methods.length; i++) {
+        ttq.setAndDefer(ttq, ttq.methods[i]);
       }
-    };
+      
+      ttq.instance = function(t: string) {
+        const e = ttq._i[t] || [];
+        for (let n = 0; n < ttq.methods.length; n++) {
+          ttq.setAndDefer(e, ttq.methods[n]);
+        }
+        return e;
+      };
+      
+      ttq.load = function(e: string, n?: any) {
+        const i = 'https://analytics.tiktok.com/i18n/pixel/events.js';
+        ttq._i = ttq._i || {};
+        ttq._i[e] = [];
+        ttq._i[e]._u = i;
+        ttq._t = ttq._t || {};
+        ttq._t[e] = +new Date();
+        ttq._o = ttq._o || {};
+        ttq._o[e] = n || {};
+        
+        const o = d.createElement('script');
+        o.type = 'text/javascript';
+        o.async = true;
+        o.src = i + '?sdkid=' + e + '&lib=' + t;
+        
+        o.onload = () => {
+          console.log('✅ TikTok Pixel SDK loaded successfully');
+          isPixelReady = true;
+        };
+        
+        o.onerror = () => {
+          console.error('❌ Failed to load TikTok Pixel SDK');
+        };
+        
+        const a = d.getElementsByTagName('script')[0];
+        if (a && a.parentNode) {
+          a.parentNode.insertBefore(o, a);
+        }
+      };
+      
+    })(window, document, 'ttq');
     
-    // Instance function
-    ttq.instance = function(pixelCode: string) {
-      return ttq._i[pixelCode] || [];
-    };
+    // Load the pixel with the ID
+    window.ttq.load(PIXEL_ID);
     
-    // Load the pixel
-    ttq.load(PIXEL_ID);
-    ttq.page();
+    // Track initial page view after a short delay to ensure SDK is loaded
+    setTimeout(() => {
+      if (window.ttq && window.ttq.page) {
+        window.ttq.page();
+        console.log('📄 TikTok Pixel: Initial PageView tracked');
+      }
+    }, 100);
     
-    console.log('TikTok Pixel initialized and page tracked');
   } catch (error) {
-    console.error('Error initializing TikTok Pixel:', error);
+    console.error('❌ Error initializing TikTok Pixel:', error);
   }
 };
 
-// Helper to safely call ttq
+// Helper to safely call ttq with better error handling
 const ttq = (eventName: string, params?: Record<string, any>) => {
-  if (typeof window !== 'undefined' && window.ttq && PIXEL_ID) {
-    console.log('TikTok Pixel Event:', eventName, params);
+  if (typeof window === 'undefined') {
+    console.warn('⚠️ TikTok Pixel: Window is undefined');
+    return;
+  }
+  
+  if (!PIXEL_ID) {
+    console.warn('⚠️ TikTok Pixel: PIXEL_ID not configured');
+    return;
+  }
+  
+  if (!window.ttq) {
+    console.warn('⚠️ TikTok Pixel: ttq object not initialized yet');
+    return;
+  }
+  
+  try {
+    console.log('🎯 TikTok Pixel Event:', eventName, params);
     window.ttq.track(eventName, params);
-  } else {
-    console.warn('TikTok Pixel not available for event:', eventName);
+    console.log('✅ TikTok Pixel: Event sent successfully');
+  } catch (error) {
+    console.error('❌ TikTok Pixel: Error tracking event:', error);
   }
 };
 
@@ -109,7 +131,13 @@ export const useTikTokPixel = () => {
   // Track page view
   const trackPageView = () => {
     if (typeof window !== 'undefined' && window.ttq && PIXEL_ID) {
-      window.ttq.page();
+      try {
+        console.log('📄 TikTok Pixel: Tracking PageView');
+        window.ttq.page();
+        console.log('✅ TikTok Pixel: PageView sent');
+      } catch (error) {
+        console.error('❌ TikTok Pixel: Error tracking page view:', error);
+      }
     }
   };
 
