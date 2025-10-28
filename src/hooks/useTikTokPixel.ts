@@ -9,32 +9,28 @@ declare global {
 
 const PIXEL_ID = import.meta.env.VITE_TIKTOK_PIXEL_ID;
 
-let isPixelReady = false;
-
 // Initialize TikTok Pixel once
 export const initializeTikTokPixel = () => {
   if (typeof window === 'undefined') return;
   
   if (!PIXEL_ID) {
-    console.warn('⚠️ TikTok Pixel ID is not configured in environment variables');
+    console.warn('⚠️ TikTok Pixel ID is not configured');
     return;
   }
   
-  if (window.ttq && isPixelReady) {
-    console.log('✅ TikTok Pixel already initialized and ready');
+  if (window.ttq) {
+    console.log('✅ TikTok Pixel already initialized');
     return;
   }
   
   console.log('🚀 Initializing TikTok Pixel with ID:', PIXEL_ID);
   
   try {
-    // Standard TikTok Pixel implementation
-    (function(w: any, d: Document, t: string) {
-      w.TikTokAnalyticsObject = t;
+    // Official TikTok Pixel Code
+    (function (w: any, d: Document, t: string) {
+      w.TiktokAnalyticsObject = t;
       const ttq = w[t] = w[t] || [];
-      
-      ttq.methods = ['page', 'track', 'identify', 'instances', 'debug', 'on', 'off', 'once', 'ready', 'alias', 'group', 'enableCookie', 'disableCookie'];
-      
+      ttq.methods = ["page", "track", "identify", "instances", "debug", "on", "off", "once", "ready", "alias", "group", "enableCookie", "disableCookie", "holdConsent", "revokeConsent", "grantConsent"];
       ttq.setAndDefer = function(t: any, e: string) {
         t[e] = function() {
           t.push([e].concat(Array.prototype.slice.call(arguments, 0)));
@@ -54,47 +50,41 @@ export const initializeTikTokPixel = () => {
       };
       
       ttq.load = function(e: string, n?: any) {
-        const i = 'https://analytics.tiktok.com/i18n/pixel/events.js';
+        const r = "https://analytics.tiktok.com/i18n/pixel/events.js";
+        const o = n && n.partner;
         ttq._i = ttq._i || {};
         ttq._i[e] = [];
-        ttq._i[e]._u = i;
+        ttq._i[e]._u = r;
         ttq._t = ttq._t || {};
         ttq._t[e] = +new Date();
         ttq._o = ttq._o || {};
         ttq._o[e] = n || {};
         
-        const o = d.createElement('script');
-        o.type = 'text/javascript';
-        o.async = true;
-        o.src = i + '?sdkid=' + e + '&lib=' + t;
+        const script = d.createElement("script");
+        script.type = "text/javascript";
+        script.async = true;
+        script.src = r + "?sdkid=" + e + "&lib=" + t;
         
-        o.onload = () => {
+        script.onload = () => {
           console.log('✅ TikTok Pixel SDK loaded successfully');
-          isPixelReady = true;
         };
         
-        o.onerror = () => {
+        script.onerror = () => {
           console.error('❌ Failed to load TikTok Pixel SDK');
         };
         
-        const a = d.getElementsByTagName('script')[0];
-        if (a && a.parentNode) {
-          a.parentNode.insertBefore(o, a);
+        const firstScript = d.getElementsByTagName("script")[0];
+        if (firstScript && firstScript.parentNode) {
+          firstScript.parentNode.insertBefore(script, firstScript);
         }
       };
       
+      // Load and track initial page view
+      ttq.load(PIXEL_ID);
+      ttq.page();
+      console.log('📄 TikTok Pixel: Initialized and PageView tracked');
+      
     })(window, document, 'ttq');
-    
-    // Load the pixel with the ID
-    window.ttq.load(PIXEL_ID);
-    
-    // Track initial page view after a short delay to ensure SDK is loaded
-    setTimeout(() => {
-      if (window.ttq && window.ttq.page) {
-        window.ttq.page();
-        console.log('📄 TikTok Pixel: Initial PageView tracked');
-      }
-    }, 100);
     
   } catch (error) {
     console.error('❌ Error initializing TikTok Pixel:', error);
